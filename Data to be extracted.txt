@@ -86,3 +86,74 @@ Insurance Type
 Insurance Policy Number
 Insurance Expiry Date
 Passport No.
+
+
+
+
+Uploaded file type: application/pdf
+
+Uploaded file type: application/pdf
+
+Processing PDF...
+
+PDF has 2 pages.
+
+Extracting data from PDF...
+
+TypeError: Missing required arguments; Expected either ('messages' and 'model') or ('messages', 'model' and 'stream') arguments to be given
+Traceback:
+File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 88, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 590, in code_to_exec
+    exec(code, module.__dict__)
+File "D:\Impelox\document extraction\doc_extractor 28-09-2024\pdf2.py", line 110, in <module>
+    response = openai.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\openai\_utils\_utils.py", line 273, in wrapper
+    raise TypeError(msg)
+
+
+
+
+
+
+
+
+
+
+
+
+PS D:\Impelox\document extraction\doc_extractor 28-09-2024> streamlit run pdf2.py
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://192.168.29.18:8501
+
+2024-09-30 18:42:18.069 Uncaught app exception
+Traceback (most recent call last):
+  File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 88, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 590, in code_to_exec
+    exec(code, module.__dict__)
+  File "D:\Impelox\document extraction\doc_extractor 28-09-2024\pdf2.py", line 110, in <module>
+    response = openai.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\openai\_utils\_utils.py", line 273, in wrapper
+    raise TypeError(msg)
+TypeError: Missing required arguments; Expected either ('messages' and 'model') or ('messages', 'model' and 'stream') arguments to be given
+2024-09-30 18:42:52.170 Uncaught app exception
+Traceback (most recent call last):
+  File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 88, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 590, in code_to_exec
+    exec(code, module.__dict__)
+  File "D:\Impelox\document extraction\doc_extractor 28-09-2024\pdf2.py", line 110, in <module>
+    response = openai.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Impelox\document extraction\doc_extractor 28-09-2024\.venv\Lib\site-packages\openai\_utils\_utils.py", line 273, in wrapper
+    raise TypeError(msg)
+TypeError: Missing required arguments; Expected either ('messages' and 'model') or ('messages', 'model' and 'stream') arguments to be given
