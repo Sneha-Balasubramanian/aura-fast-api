@@ -92,6 +92,7 @@ def process_pdf_images(uploaded_file):
     """Convert PDF pages to images and get descriptions using GPT."""
     images = convert_from_bytes(uploaded_file.getbuffer(), fmt='jpeg')
     image_bytes_list = []
+    
     for img in images:
         img = np.array(img)
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert image to RGB
@@ -118,7 +119,7 @@ if uploaded_file is not None:
 
             list_all_descriptions = []
             for _ in range(3):
-                all_descriptions = get_image_description(openai, image_bytes_array, system_prompt=system_prompt, user_prompt=user_prompt, is_image_type=True)
+                all_descriptions = get_image_description(openai, image_bytes_array, system_prompt=system_prompt, user_prompt=user_prompt)
                 list_all_descriptions.append(all_descriptions)     
 
             # Display all image descriptions
@@ -144,7 +145,7 @@ if uploaded_file is not None:
 
                 # Loop to get image descriptions based on extracted text
                 for _ in range(3):
-                    all_descriptions = get_image_description(openai, pdf_text_descriptions, system_prompt=system_prompt, user_prompt=user_prompt, is_image_type=False)
+                    all_descriptions = get_image_description(openai, pdf_text_descriptions, system_prompt=system_prompt, user_prompt=user_prompt)
                     list_pdf_text_descriptions.append(all_descriptions)
                 
                 st.write("text descriptions from the PDF:")
@@ -175,7 +176,7 @@ if uploaded_file is not None:
                 descriptions = []
 
                 for _ in range(3):
-                    description = get_image_description(openai, uploaded_file.getbuffer(),  system_prompt=system_prompt, user_prompt=user_prompt, is_image_type=True)
+                    description = get_image_description(openai, uploaded_file.getbuffer(),  system_prompt=system_prompt, user_prompt=user_prompt)
                     
                     descriptions.append(description)
 
@@ -184,3 +185,79 @@ if uploaded_file is not None:
                 descriptions_str = json.dumps(descriptions)
                 result = get_confidence_level(openai, descriptions_str)
                 st.write(result)
+=============================================================================================
+import base64
+
+def get_image_description(client, uploaded_file, system_prompt, user_prompt):
+    # Check if the uploaded file is a list
+    if isinstance(uploaded_file, list):
+        # If the list contains bytes, encode each item in base64
+        if isinstance(uploaded_file[0], bytes):  # Assuming all elements are of the same type
+            encoded_content_list = [
+                get_image_content(base64.b64encode(i).decode('utf-8')) 
+                for i in uploaded_file
+            ]
+        # If the list contains strings, handle them as text
+        elif isinstance(uploaded_file[0], str):
+            encoded_content_list = [
+                get_text_content(i) for i in uploaded_file
+            ]
+    else:
+        # If the uploaded file is bytes, encode it in base64
+        if isinstance(uploaded_file, memoryview):
+            encoded_content_list = [get_image_content(base64.b64encode(uploaded_file).decode('utf-8'))]
+        # If the uploaded file is a string, handle it as text
+        elif isinstance(uploaded_file, str):
+            encoded_content_list = [get_text_content(uploaded_file)]
+        else:
+            raise ValueError("Unsupported file type. Provide either bytes or string.")
+
+    # Create the GPT-4 API request
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": system_prompt
+                    },
+                ]
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"Please respond specifically to the user's prompt in JSON format: {user_prompt}."
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    *encoded_content_list
+                ],
+            }
+        ],
+        max_tokens=1500,
+        temperature=0.3,
+        response_format={"type": "json_object"}  # Turn on JSON mode
+    )
+
+    # Extract and return the description
+    return response.choices[0].message.content
+
+
+def get_image_content(image_content):
+    return {
+        "type": "image_url",
+        "image_url": {"url": f"data:image/png;base64,{image_content}"}
+    }
+
+def get_text_content(text_content):
+    return {
+        "type": "text",
+        "text": text_content
+    }

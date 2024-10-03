@@ -536,12 +536,33 @@ if uploaded_file is not None:
                 st.write(result)
                 
 ================================================================================================================================
+        else:
+            st.write("No images found in the PDF or no valid images. Extracting text...")
 
+            # Extract text from PDF and collect all pages into a list
+            all_text_descriptions = extract_pdf_text(uploaded_file)
+
+            if all_text_descriptions:  # Check if there are any extracted texts
+                st.write("Extracted text from the PDF:")
+                st.write(all_text_descriptions)
+
+                # Convert the list of text descriptions to JSON for confidence analysis
+                text_descriptions_str = json.dumps(all_text_descriptions)
+                confidence_result = get_confidence_level(openai, text_descriptions_str)
+                st.write(confidence_result)
+            else:
+                st.write("No text found in the PDF.")
+
+----------------------------
 import base64
 
-def get_image_description(client, uploaded_file, detailed_prompt, user_prompt):
+def get_image_description(client, uploaded_file, system_prompt, user_prompt):
     # Encode the uploaded image in base64
-    encoded_image = base64.b64encode(uploaded_file).decode('utf-8')
+    
+    if isinstance(uploaded_file, list): 
+        encoded_image_list = [get_image_content(base64.b64encode(i).decode('utf-8')) for i in uploaded_file]
+    else: 
+        encoded_image_list = [get_image_content(base64.b64encode(uploaded_file).decode('utf-8'))]
 
     # Create the GPT-4 API request
     response = client.chat.completions.create(
@@ -552,7 +573,7 @@ def get_image_description(client, uploaded_file, detailed_prompt, user_prompt):
                 "content": [
                     {
                         "type": "text",
-                        "text": f"{detailed_prompt} Please respond specifically to the user's prompt in JSON format: {user_prompt}."
+                        "text": system_prompt
                     },
                 ]
             },
@@ -560,59 +581,29 @@ def get_image_description(client, uploaded_file, detailed_prompt, user_prompt):
                 "role": "user",
                 "content": [
                     {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{encoded_image}"}
-                    },
+                        "type": "text",
+                        "text": f"User Prompt: {user_prompt}"
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    *encoded_image_list
                 ],
             }
         ],
         max_tokens=1500,
-        temperature=0.0,
+        temperature=0.3,
         response_format={"type": "json_object"}  # Turn on JSON mode
     )
 
     # Extract and return the description
     return response.choices[0].message.content
-======================================================================================================================
-
-def get_confidence_level(client, descriptions):
-    # Create the GPT-4o API request
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-    
-        messages=[
-            {
-                "role": "system",
-                "content": 
-                """
-                    you are a helpful AI assistant specialized in analyzing all the key-value pairs given as input and evaluating the confidence score. I have done three API calls which will also give you the output three times, the result of which is appended in a list (descriptions).
-
-                    Follow the following steps:
-
-                    1. The inputs will be key-value pairs; I want you to analyze them completely.
-                    2. Select the most accurate key-value pair for all the fields  among the entries provided.
-                    3. For every field's selected key-value pair, evaluate the confidence score.
-                    4. Give the output in the following format:
-                    "key-value pair", "confidence score": x, where the x value ranges between (0 to 1).
-                    5. Don't print the whole process , give only the final result 
-                    6. Evaluation of the confidence score is based on the consistency of the outputs. Compare the outputs in all of the jsons, Higher the consistency, the higher the confidence score is.
-                """
-            },
-            {
-                "role": "user",
-                "content": descriptions
-            },
-        ],
-        max_tokens=1500,
-        temperature=0.0
-         
-    )
-    return response.choices[0].message.content
 
 
-
-
-
-
-
-
+def get_image_content(image_content):
+    return {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{image_content}"}
+            }

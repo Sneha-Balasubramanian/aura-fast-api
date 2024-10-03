@@ -1,12 +1,15 @@
 import base64
 
-def get_image_description(client, uploaded_file, detailed_prompt, user_prompt):
-    # Encode the uploaded image in base64
-    
-    if isinstance(uploaded_file, list): 
-        encoded_image_list = [get_image_content(base64.b64encode(i).decode('utf-8')) for i in uploaded_file]
-    else: 
-        encoded_image_list = [get_image_content(base64.b64encode(uploaded_file).decode('utf-8'))]
+def get_image_description(client, uploaded_file, system_prompt, user_prompt, is_image_type=False):
+    # Ensure that uploaded_file is always treated as a list
+    if not isinstance(uploaded_file, list):
+        uploaded_file = [uploaded_file]  # Convert single item to a list
+
+    # Encode the content based on the type of the file
+    if is_image_type:
+        encoded_content_list = [get_image_content(base64.b64encode(i).decode('utf-8')) for i in uploaded_file ]# Handle image bytes/memoryview
+    else:
+        encoded_content_list = [get_text_content(i) for i in uploaded_file ] # Handle text strings
 
     # Create the GPT-4 API request
     response = client.chat.completions.create(
@@ -17,19 +20,28 @@ def get_image_description(client, uploaded_file, detailed_prompt, user_prompt):
                 "content": [
                     {
                         "type": "text",
-                        "text": f"{detailed_prompt} Please respond specifically to the user's prompt in JSON format: {user_prompt}."
+                        "text": system_prompt
                     },
                 ]
             },
             {
                 "role": "user",
                 "content": [
-                    *encoded_image_list
+                    {
+                        "type": "text",
+                        "text": f"Please respond specifically to the user's prompt in JSON format: {user_prompt}."
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    *encoded_content_list
                 ],
             }
         ],
         max_tokens=1500,
-        temperature=0.0,
+        temperature=0.3,
         response_format={"type": "json_object"}  # Turn on JSON mode
     )
 
@@ -39,6 +51,12 @@ def get_image_description(client, uploaded_file, detailed_prompt, user_prompt):
 
 def get_image_content(image_content):
     return {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/png;base64,{image_content}"}
-            }
+        "type": "image_url",
+        "image_url": {"url": f"data:image/png;base64,{image_content}"}
+    }
+
+def get_text_content(text_content):
+    return {
+        "type": "text",
+        "text": text_content
+    }
